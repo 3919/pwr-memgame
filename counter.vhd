@@ -32,7 +32,11 @@ use IEEE.NUMERIC_STD.ALL;
 entity counter is
     Port (  clk : in  STD_LOGIC;
 				reset : in  STD_LOGIC;
+<<<<<<< HEAD
             ticks : out  STD_LOGIC_VECTOR (15 downto 0));
+=======
+            ticks : out  STD_LOGIC_VECTOR (7 downto 0));
+>>>>>>> e46fe4a... adding simple counter mod 256 impl
 end counter;
 
 architecture Behavioral of counter is
