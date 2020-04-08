@@ -1,10 +1,6 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
  
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---USE ieee.numeric_std.ALL;
- 
 ENTITY ps2_controller_tb IS
 END ps2_controller_tb;
  
