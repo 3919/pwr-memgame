@@ -14,14 +14,13 @@ ARCHITECTURE behavior OF ps2_controller_tb IS
          B2_X : IN  std_logic_vector(7 downto 0);
          B3_Y : IN  std_logic_vector(7 downto 0);
          dataready : IN  std_logic;
-         mouse_status : OUT  std_logic_vector(7 downto 0);
+         mouse_irq : INOUT  std_logic;
          x_cur_pos : OUT  std_logic_vector(15 downto 0);
          y_cur_pos : OUT  std_logic_vector(15 downto 0);
          pos_ready : OUT  std_logic
         );
     END COMPONENT;
     
-
    --Inputs
    signal clk : std_logic := '0';
    signal B1_status : std_logic_vector(7 downto 0) := (others => '0');
@@ -30,7 +29,7 @@ ARCHITECTURE behavior OF ps2_controller_tb IS
    signal dataready : std_logic := '0';
 
  	--Outputs
-   signal mouse_status : std_logic_vector(7 downto 0);
+   signal mouse_irq : std_logic;
    signal x_cur_pos : std_logic_vector(15 downto 0);
    signal y_cur_pos : std_logic_vector(15 downto 0);
    signal pos_ready : std_logic;
@@ -46,7 +45,7 @@ BEGIN
 		 B2_X => B2_X,
 		 B3_Y => B3_Y,
 		 dataready => dataready,
-		 mouse_status => mouse_status,
+		 mouse_irq => mouse_irq,
 		 x_cur_pos => x_cur_pos,
 		 y_cur_pos => y_cur_pos,
 		 pos_ready => pos_ready
@@ -61,8 +60,6 @@ BEGIN
 		wait for clk_period/2;
    end process;
 	
-	dataready <= not dataready after clk_period/2;
-	
    -- Stimulus process
    stim_proc: process
 		type typeByteArray is array ( NATURAL range<> )of STD_LOGIC_VECTOR( 7 downto 0 );
@@ -73,7 +70,11 @@ BEGIN
 			B2_x <= x_pos_test(i);
 			B3_y <= y_pos_test(i);
 			B1_status <= not B1_status;
+			dataready <= '1';
 			wait until pos_ready = '1';
+			dataready <= '0';
+			wait for clk_period;
+			
 		end loop;
    end process;
 END;
