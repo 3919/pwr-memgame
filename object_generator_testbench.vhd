@@ -5,7 +5,7 @@ USE ieee.numeric_std.ALL;
 ENTITY object_generator_tb IS
 END object_generator_tb;
 
-ARCHITECTURE behavior OF object_generator_tb IS 
+ARCHITECTURE behavior OF object_generator_tb IS
 
     -- Component Declaration for the Unit Under Test (UUT)
 
@@ -68,28 +68,66 @@ BEGIN
    -- Stimulus process
    stim_proc: process
    begin
-    wait for 25ns;
+     wait for 25ns;
 
-    i_reset <= '1';
-      wait for clock_period;
-    i_object_count <= std_logic_vector(to_unsigned(6, i_object_count'length));
-      i_random <= "01100011";
-    wait for clock_period;
-    i_reset <= '0';
-    wait for clock_period;
-    i_random <= "01010110";
-    wait for clock_period;
-    i_random <= "10110110";
-    wait for clock_period;
-    i_random <= "10101101";
-    wait for clock_period;
-    i_random <= "10100011";
-    wait for clock_period;
-    i_random <= "00100110";
-    wait for clock_period;
-    i_random <= "10101010";
+     i_reset <= '1';
+     i_mem_datain <= std_logic_vector(to_unsigned(5, i_mem_datain'length));
+     --o_mem_dataout <= std_logic_vector(to_unsigned(9, i_object_count'length));
+       wait for clock_period;
+     i_object_count <= std_logic_vector(to_unsigned(4, i_object_count'length));
+       i_random <= "01100011";
+     wait for clock_period;
+     i_reset <= '0';
+     wait for clock_period;
+     i_random <= "01010110";
+     wait for clock_period;
+     i_random <= "10110110";
+     wait for clock_period;
+     i_random <= "10101101";
+     wait for clock_period;
+     i_random <= "10100011";
+     wait for clock_period;
+     i_random <= "00100110";
+     wait for clock_period;
+     i_random <= "10101010";
+     wait for clock_period;
+     i_random <= "01010110";
+     wait for clock_period;
+     i_random <= "10110110";
+     wait for clock_period;
+     i_random <= "10101101";
+     wait for clock_period;
+     i_random <= "10100011";
+     wait for clock_period;
+     i_random <= "00100110";
+     wait for clock_period;
+     i_random <= "10101010";
+     wait for clock_period;
+     i_random <= "01010110";
+     wait for clock_period;
+     i_random <= "10110110";
+     wait for clock_period;
+     i_random <= "10101101";
+     wait for clock_period;
+     i_random <= "10100011";
+     wait for clock_period;
+     i_random <= "00100110";
+     wait for clock_period;
+     i_random <= "10101010";
+     wait for clock_period;
+     i_random <= "01010110";
+     wait for clock_period;
+     i_random <= "10110110";
+     wait for clock_period;
+     i_random <= "10101101";
+     wait for clock_period;
+     i_random <= "10100011";
+     wait for clock_period;
+     i_random <= "00100110";
+     wait for clock_period;
+     i_random <= "10101010";
 
-    wait;
+     wait;
    end process;
 
 END;
