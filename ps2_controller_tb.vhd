@@ -69,7 +69,7 @@ BEGIN
 		for i in x_pos_test'RANGE loop
 			B2_x <= x_pos_test(i);
 			B3_y <= y_pos_test(i);
-			B1_status <= not B1_status;
+			B1_status <= B1_status;
 			dataready <= '1';
 			wait until pos_ready = '1';
 			dataready <= '0';

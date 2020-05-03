@@ -4,29 +4,29 @@ use IEEE.NUMERIC_STD.ALL;
 use IEEE.STD_LOGIC_SIGNED.ALL;
 
 entity ps2_controller is
-    Port ( clk : in  STD_LOGIC;
-           B1_status : in  STD_LOGIC_VECTOR (7 downto 0);
-           B2_X : in  STD_LOGIC_VECTOR (7 downto 0);
-           B3_Y : in  STD_LOGIC_VECTOR (7 downto 0);
-			  dataready : in STD_LOGIC;
-			  mouse_irq : inout STD_LOGIC;
-			  x_cur_pos : out STD_LOGIC_VECTOR (15 downto 0);
-			  y_cur_pos : out STD_LOGIC_VECTOR (15 downto 0);
-			  pos_ready : out STD_LOGIC);
+    Port (clk : in  STD_LOGIC;
+		  B1_status : in  STD_LOGIC_VECTOR (7 downto 0);
+		  B2_X : in  STD_LOGIC_VECTOR (7 downto 0);
+		  B3_Y : in  STD_LOGIC_VECTOR (7 downto 0);
+		  dataready : in STD_LOGIC;
+		  mouse_irq : inout STD_LOGIC;
+		  x_cur_pos : out STD_LOGIC_VECTOR (15 downto 0);
+		  y_cur_pos : out STD_LOGIC_VECTOR (15 downto 0);
+		  pos_ready : out STD_LOGIC);
 end ps2_controller;
 
 architecture Behavioral of ps2_controller is
 	component reg16
-		Port ( data_in : in  STD_LOGIC_VECTOR (15 downto 0);
-				 data_out : out  STD_LOGIC_VECTOR (15 downto 0);
-				 clk : in  STD_LOGIC;
-				 en : in  STD_LOGIC);
+		Port (data_in : in  STD_LOGIC_VECTOR (15 downto 0);
+			  data_out : out  STD_LOGIC_VECTOR (15 downto 0);
+			  clk : in  STD_LOGIC;
+			  en : in  STD_LOGIC);
 	end component;
 	
 	component counter
 		Port( clk   : in  std_logic;
-				reset : in  std_logic;
-				ticks : out  std_logic_vector(15 downto 0));
+			  reset : in  std_logic;
+			  ticks : out  std_logic_vector(15 downto 0));
     end component;
 	 
 	-- general signals 
@@ -47,7 +47,7 @@ architecture Behavioral of ps2_controller is
 	-- counter signals
 	signal reset : STD_LOGIC := '0';
 	signal ticks : STD_LOGIC_VECTOR(15 downto 0);
-   
+  
 begin
 	reg_x_pos : reg16 PORT MAP(
 		data_in => data_in_reg_x,
@@ -71,10 +71,8 @@ begin
 	
 	clk_s <= clk;
 	mouse_irq <= mouse_irq_s;
-	x_cur_pos <= cur_pos_x_s;
-	y_cur_pos <= cur_pos_y_s;
 	pos_ready <= processing_done;
-	
+
 calc_pos:process(clk, processing_done, B1_status)
 begin 
 		cur_pos_x_s <= cur_pos_x_s;
@@ -82,19 +80,34 @@ begin
 		reset <= '0';
 	if rising_edge(clk) and processing_done = '1' then
 		reset <= '1';
-		if B1_status(4) = '0' then
+		if B1_status(4) = '0' and cur_pos_x_s < 480 then
 		  cur_pos_x_s <= cur_pos_x_s + data_out_reg_x;
-		else
+		elsif cur_pos_x_s > 0 then
 		  cur_pos_x_s <= cur_pos_x_s - data_out_reg_x;
 		end if;
 		
-		if B1_status(5) = '0' then
+		if B1_status(5) = '0' and cur_pos_x_s < 480 then
 		  cur_pos_y_s <= cur_pos_y_s + data_out_reg_y;
-		else
+		elsif cur_pos_y_s > 0 then
 		  cur_pos_y_s <= cur_pos_y_s - data_out_reg_y;
 		end if;
-		
 	end if;
+end process;
+
+assign_pos:process(cur_pos_x_s, cur_pos_y_s)
+begin
+	if cur_pos_x_s < 0 then
+		x_cur_pos <= X"0000";
+	else
+		x_cur_pos <= cur_pos_x_s;
+	end if;
+	
+	if cur_pos_y_s < 0 then
+		y_cur_pos <= X"0000";
+	else
+		y_cur_pos <= cur_pos_y_s;
+	end if;
+
 end process;
 
 count_when_proc:process(ticks)

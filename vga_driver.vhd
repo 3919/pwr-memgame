@@ -19,6 +19,7 @@
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 entity vga_driver is
     Port ( 	clk         : in     STD_LOGIC;
@@ -38,7 +39,6 @@ architecture Behavioral of vga_driver is
 				ticks : out  std_logic_vector(15 downto 0));
     end component;
 			 
-	 
 	-- counter signals
 	signal reset : STD_LOGIC := '0';
 	signal ticks : STD_LOGIC_VECTOR(15 downto 0);
@@ -50,18 +50,20 @@ begin
       ticks => ticks
    );
 	
- display: process(ticks, vga_busy, lock_in)
- begin
-	lock_out <= '0';
-	if lock_in = '0' and vga_busy = '0'
-	then
-		mem_address <= ticks;
-		vga_data <= mem_datain;
-		vga_we <= '1';
-		lock_out <= '1';
-	end if;
+	vga_data <= mem_datain when vga_busy = '0';
+	mem_address <= ticks;
 	
- end process;
- reset <= '1' when ticks >= X"3c0" else '0';
+	load: process(ticks, vga_busy, lock_in)
+	begin
+		if lock_in = '0' and vga_busy = '0' and ticks < X"3c0"
+		then
+			reset <= '0';
+			vga_we <= '1';
+		else
+			vga_we <= '0';
+			reset <= '1';
+		end if;
+	end process;
 
+lock_out <= '1' when lock_in ='0' else '0'; 
 end Behavioral;
