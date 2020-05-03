@@ -42,8 +42,8 @@ ARCHITECTURE behavior OF vga_tb IS
     COMPONENT vga_driver
     PORT(
          clk : IN  std_logic;
-         lock_in : IN  std_logic;
-         lock_out : OUT  std_logic;
+         enable : IN  std_logic;
+         work : OUT  std_logic;
          mem_address : OUT  std_logic_vector(15 downto 0);
          mem_datain : IN  std_logic_vector(7 downto 0);
          vga_data : OUT  std_logic_vector(7 downto 0);
@@ -55,12 +55,12 @@ ARCHITECTURE behavior OF vga_tb IS
 
    --Inputs
    signal clk : std_logic := '0';
-   signal lock_in : std_logic := '0';
+   signal enable : std_logic := '0';
    signal mem_datain : std_logic_vector(7 downto 0) := (others => '0');
    signal vga_busy : std_logic := '0';
 
  	--Outputs
-   signal lock_out : std_logic;
+   signal work : std_logic;
    signal mem_address : std_logic_vector(15 downto 0);
    signal vga_data : std_logic_vector(7 downto 0);
    signal vga_we : std_logic;
@@ -73,8 +73,8 @@ BEGIN
 	-- Instantiate the Unit Under Test (UUT)
    uut: vga_driver PORT MAP (
           clk => clk,
-          lock_in => lock_in,
-          lock_out => lock_out,
+          enable => enable,
+          work => work,
           mem_address => mem_address,
           mem_datain => mem_datain,
           vga_data => vga_data,
@@ -90,7 +90,7 @@ BEGIN
 		clk <= '1';
 		wait for clk_period/2;
    end process;
-	lock_in <= '0';
+	enable <= '1';
    -- Stimulus process
    stim_proc: process
    begin		
