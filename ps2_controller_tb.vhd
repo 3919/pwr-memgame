@@ -14,10 +14,10 @@ ARCHITECTURE behavior OF ps2_controller_tb IS
          B2_X : IN  std_logic_vector(7 downto 0);
          B3_Y : IN  std_logic_vector(7 downto 0);
          dataready : IN  std_logic;
-         mouse_irq : INOUT  std_logic;
+         mouse_irq : OUT  std_logic;
+			logic_irq : IN  std_logic;
          x_cur_pos : OUT  std_logic_vector(15 downto 0);
-         y_cur_pos : OUT  std_logic_vector(15 downto 0);
-         pos_ready : OUT  std_logic
+         y_cur_pos : OUT  std_logic_vector(15 downto 0)
         );
     END COMPONENT;
     
@@ -30,9 +30,9 @@ ARCHITECTURE behavior OF ps2_controller_tb IS
 
  	--Outputs
    signal mouse_irq : std_logic;
+	signal logic_irq : std_logic;
    signal x_cur_pos : std_logic_vector(15 downto 0);
    signal y_cur_pos : std_logic_vector(15 downto 0);
-   signal pos_ready : std_logic;
 
    -- Clock period definitions
    constant clk_period : time := 10 ns;
@@ -46,9 +46,9 @@ BEGIN
 		 B3_Y => B3_Y,
 		 dataready => dataready,
 		 mouse_irq => mouse_irq,
+		 logic_irq => logic_irq,
 		 x_cur_pos => x_cur_pos,
-		 y_cur_pos => y_cur_pos,
-		 pos_ready => pos_ready
+		 y_cur_pos => y_cur_pos
 	  );
 
    -- Clock process definitions
@@ -59,6 +59,7 @@ BEGIN
 		clk <= '1';
 		wait for clk_period/2;
    end process;
+	logic_irq <= '0';
 	
    -- Stimulus process
    stim_proc: process
@@ -71,9 +72,9 @@ BEGIN
 			B3_y <= y_pos_test(i);
 			B1_status <= B1_status;
 			dataready <= '1';
-			wait until pos_ready = '1';
+			wait for clk_period*2;
 			dataready <= '0';
-			wait for clk_period;
+			wait for clk_period*2;
 			
 		end loop;
    end process;
