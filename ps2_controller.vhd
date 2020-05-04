@@ -67,7 +67,7 @@ begin
 		if cur_pos_y_s < 0 then
 			y_cur_pos <= X"0000";
 		elsif cur_pos_y_s >= 200 then
-			y_cur_pos <= X"01e0";
+			y_cur_pos <= X"00c8";
 		else
 			y_cur_pos <= cur_pos_y_s;
 		end if;
@@ -77,5 +77,5 @@ end process;
 data_in_reg_x <= x"00"&B2_X when dataready = '1';
 data_in_reg_y <= x"00"&B3_Y when dataready = '1';
 
-mouse_irq_s <= '1' when B1_status(0) ='1' and logic_irq ='1' else '0';
+mouse_irq_s <= '1' when B1_status(0) ='1' else '0';
 end Behavioral;
