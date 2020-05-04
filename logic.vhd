@@ -9,17 +9,25 @@ entity logic is
     objgen_datain  : out std_logic_vector (7 downto 0);
     objgen_dataout : in  std_logic_vector (7 downto 0);
     clk            : in  std_logic;
-    ps2_irq        : in  std_logic;
+    ps2_irq_in     : in  std_logic;
+	 ps2_irq_out    : out std_logic;
     ps2_x          : in  std_logic_vector (15 downto 0);
     ps2_y          : in  std_logic_vector (15 downto 0);
     vga_address    : in  std_logic_vector (15 downto 0);
     vga_datain     : out std_logic_vector (7 downto 0);
     vga_enable     : out std_logic;
-    vga_work       : in  std_logic
+    vga_work       : in  std_logic;
+	 vga_mouse_pos  : out std_logic_vector (7 downto 0);
+	 game_state 	 : out std_logic_vector (1 downto 0)
   );
 end logic;
 
 architecture Behavioral of logic is
+  constant mouse_position_div : integer := 100;
+  constant ps2_max_x_pos : integer := 4800;
+  constant ps2_max_y_pos : integer := 2000;
+  constant ps2_max_calc_pos : integer := ((ps2_max_x_pos/mouse_position_div)*(ps2_max_y_pos/mouse_position_div));
+    
   component memmux
   port (
     clk         : in  std_logic;
@@ -83,8 +91,15 @@ architecture Behavioral of logic is
   signal sog_mem_datain   : std_logic_vector (7 downto 0);
   signal sog_mem_dataout  : std_logic_vector (7 downto 0);
 
-  type state_type is (RESET, BOOTSTRAP, IDLE, IRQ, DRAW, GAME_LOST, GAME_WIN);
+  type state_type is (RESET, BOOTSTRAP, IDLE, IRQ, CLICK, DRAW, GAME_LOST, GAME_WIN);
   signal state : state_type := RESET;
+  
+  -- ps2 signals
+  signal ps2_x_pos : integer range 0 to ps2_max_x_pos := 0;
+  signal ps2_y_pos : integer range 0 to ps2_max_y_pos := 0;
+  -- actual postion, where mouse cursor was clicked, also memoery position
+  signal ps2_pos   : integer range 0 to ps2_max_calc_pos := 0;
+
 
   constant MAX_OBJECT_COUNT : unsigned(sog_object_count'range) := X"0006";
 begin
@@ -125,14 +140,14 @@ begin
      OUT_address => mem_address,
      OUT_datain  => mem_datain
   );
-
+   
   process (clk) is
   begin
     if rising_edge(clk) then
       case state is
       when RESET =>
         sog_reset <= '1';
-        vga_enable <= '0';
+        vga_we <= '0';
         state <= BOOTSTRAP;
       when BOOTSTRAP =>
         if sog_ready = '1' then
@@ -143,20 +158,44 @@ begin
           sog_object_count <= std_logic_vector(MAX_OBJECT_COUNT);
         end if;
       when IDLE =>
-        if ps2_irq = '1' then
+        if ps2_irq_in = '1' then
           state <= IRQ;
         end if;
       when IRQ =>
-      -- TODO(Pawel)
+			ps2_x_pos <= to_integer(unsigned(ps2_x)/mouse_position_div);
+			ps2_y_pos <= to_integer(unsigned(ps2_y)/mouse_position_div);
+			ps2_pos <= ps2_x_pos*ps2_y_pos;
+			state <= CLICK;
+		when CLICK =>
+			state <= DRAW;
       when DRAW =>
+			if(vga_work = '0') then
+				vga_enable <= '1';
+				state <= DRAW;
+			else
+				vga_enable <= '0';
+				state <= IDLE;
+			end if;
       -- TODO(Pawel)
       when GAME_LOST =>
       -- TODO(all)
+			-- turn first led on
+			game_state(0) <= '1';
       when GAME_WIN =>
       -- TODO(all)
+			-- turn second led on
+			game_state(1) <= '1';
       end case;
     end if;
   end process;
-
+  
+  -- state CLICK will resest irq, irq will be enable as long as we won't handle it
+  ps2_irq_out <= '1' when ps2_irq_in = '1' and state /= CLICK else '0';
+  -- VGA connected signals
+  vga_mouse_pos <= std_logic_vector(to_unsigned(ps2_pos, ps2_max_calc_pos));
+  mem_address <= vga_address;
+  vga_dataout <= mem_datain;
+  vga_enable <= vga_we;
+  
 end Behavioral;
 
