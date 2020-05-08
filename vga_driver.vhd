@@ -5,7 +5,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity vga_driver is
     Port ( 	clk         : in     STD_LOGIC;
 				enable      : in     STD_LOGIC;
-				mode	      : in     STD_LOGIC_VECTOR(2 downto 0);
+				mode	      : in     STD_LOGIC_VECTOR(1 downto 0);
 				work	      : out    STD_LOGIC;
 				mem_address : out    std_logic_vector(15 downto 0);
 				mem_datain  : in     std_logic_vector(7 downto 0);
