@@ -19,7 +19,7 @@ entity logic is
 end logic;
 
 architecture Behavioral of logic is
-  constant mouse_position_div : integer := 100;
+  constant mouse_position_div : integer := 128;
   constant ps2_max_x_pos      : integer := 4800;
   constant ps2_max_y_pos      : integer := 2000;
   constant ps2_max_calc_pos   : integer := ((ps2_max_x_pos/mouse_position_div)*(ps2_max_y_pos/mouse_position_div));
@@ -33,7 +33,10 @@ architecture Behavioral of logic is
     B_we        : in  std_logic;
     B_address   : in  std_logic_vector (15 downto 0);
     B_datain    : in  std_logic_vector (7 downto 0);
-    S           : in  bit;
+    C_we        : in  std_logic;
+    C_address   : in  std_logic_vector (15 downto 0);
+    C_datain    : in  std_logic_vector (7 downto 0);
+    SEL         : in  std_logic_vector (1 downto 0);
     OUT_we      : out std_logic;
     OUT_address : out std_logic_vector (15 downto 0);
     OUT_datain  : out std_logic_vector (7 downto 0)
@@ -73,14 +76,20 @@ architecture Behavioral of logic is
   constant VGA_LOST_MODE   : std_logic_vector (1 downto 0) := "10";
   constant VGA_WON_MODE    : std_logic_vector (1 downto 0) := "11";
 
-  constant MEM_VGA_OWN    : bit := '1';
-  constant MEM_OBJGEN_OWN : bit := '0';
-  signal mem_select       : bit := MEM_OBJGEN_OWN;
+  constant MEM_VGA_OWN    : std_logic_vector (1 downto 0) := "00";
+  constant MEM_OBJGEN_OWN : std_logic_vector (1 downto 0) := "01";
+  constant MEM_LOGIC_OWN  : std_logic_vector (1 downto 0) := "10";
+  signal mem_select       : std_logic_vector (1 downto 0);
 
   signal mem_we      : std_logic;
   signal mem_address : std_logic_vector(15 downto 0);
   signal mem_datain  : std_logic_vector(7 downto 0);
   signal mem_dataout : std_logic_vector(7 downto 0);
+
+  signal logic_we      : std_logic;
+  signal logic_address : std_logic_vector(15 downto 0);
+  signal logic_datain  : std_logic_vector(7 downto 0);
+  signal logic_dataout : std_logic_vector(7 downto 0);
 
   -- Object generator signals
   signal sog_object_count : std_logic_vector (15 downto 0);
@@ -107,15 +116,6 @@ architecture Behavioral of logic is
   constant EMPTY_OBJECT : unsigned(mem_datain'range)       := X"20";
 begin
 
-  mem: ram16 port map
-  (
-     clock   => clk,
-     we      => mem_we,
-     address => mem_address,
-     datain  => mem_datain,
-     dataout => mem_dataout
-  );
-
   objgen: object_generator port map
   (
      clock          => clk,
@@ -129,6 +129,15 @@ begin
      o_mem_dataout  => sog_mem_dataout
   );
 
+  mem: ram16 port map
+  (
+     clock   => clk,
+     we      => mem_we,
+     address => mem_address,
+     datain  => mem_datain,
+     dataout => mem_dataout
+  );
+
   mm: memmux port map
   (
      clk         => clk,
@@ -138,7 +147,10 @@ begin
      B_we        => vga_we,
      B_address   => vga_address,
      B_datain    => vga_dataout,    -- vga_dataout is this modules datain
-     S           => mem_select,
+     C_we        => logic_we,
+     C_address   => logic_address,
+     C_datain    => logic_dataout,    -- logic_dataout is this modules datain
+     SEL         => mem_select,
      OUT_we      => mem_we,
      OUT_address => mem_address,
      OUT_datain  => mem_datain
@@ -159,8 +171,10 @@ begin
       when BOOTSTRAP =>
         if sog_ready = '1' then
           sog_reset <= '1';
+          mem_select <= MEM_LOGIC_OWN;
           state <= IDLE;
         else
+          mem_select <= MEM_OBJGEN_OWN;
           sog_reset <= '0';
           sog_object_count <= std_logic_vector(LAST_OBJECT);
         end if;
@@ -182,14 +196,14 @@ begin
         state <= CLICK_FETCH;
 
       when CLICK_FETCH =>
-        mem_we <= '0';
-        mem_address <= std_logic_vector(to_unsigned(ps2_pos, mem_address'LENGTH));
+        logic_we <= '0';
+        logic_address <= std_logic_vector(to_unsigned(ps2_pos, logic_address'LENGTH));
         state <= CLICK_UPDATE;
 
       when CLICK_UPDATE =>
         -- TODO(holz) Make sure this assignment is instantaneous.
-        --            Otherwise use directly mem_dataout.
-        clicked_object <= unsigned(mem_dataout);
+        --            Otherwise use directly logic_dataout.
+        clicked_object <= unsigned(logic_dataout);
 
         -- Check if clicked object is one that we expect next to click.
         -- If so continue the game, unless its last object, than its WIN.
@@ -204,13 +218,14 @@ begin
           state <= GAME_LOST;
         end if;
 
-        mem_we <= '1';
-        mem_address <= std_logic_vector(to_unsigned(ps2_pos, mem_address'LENGTH));
-        mem_datain <= std_logic_vector(EMPTY_OBJECT);
+        logic_we <= '1';
+        logic_address <= std_logic_vector(to_unsigned(ps2_pos, logic_address'LENGTH));
+        logic_datain <= std_logic_vector(EMPTY_OBJECT);
 
         when VGA_UPDATE =>
         vga_enable <= '1';
         vga_mode <= VGA_NORMAL_MODE;
+        mem_select <= MEM_VGA_OWN;
         state <= VGA_UPDATE_WAIT;
 
       when VGA_UPDATE_WAIT =>
@@ -237,9 +252,6 @@ begin
   ps2_irq_out <= '1' when ps2_irq_in = '1' and (state /= CLICK_FETCH or state /= WAIT_START) else '0';
   -- VGA connected signals
   vga_mouse_pos <= std_logic_vector(to_unsigned(ps2_pos, ps2_max_calc_pos));
-  mem_address <= vga_address;
-  vga_dataout <= mem_datain;
-  vga_enable <= vga_we;
 
 end Behavioral;
 
