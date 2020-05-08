@@ -222,7 +222,7 @@ begin
         logic_address <= std_logic_vector(to_unsigned(ps2_pos, logic_address'LENGTH));
         logic_datain <= std_logic_vector(EMPTY_OBJECT);
 
-        when VGA_UPDATE =>
+      when VGA_UPDATE =>
         vga_enable <= '1';
         vga_mode <= VGA_NORMAL_MODE;
         mem_select <= MEM_VGA_OWN;
