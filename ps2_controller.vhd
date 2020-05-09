@@ -4,7 +4,8 @@ use IEEE.NUMERIC_STD.ALL;
 use IEEE.STD_LOGIC_SIGNED.ALL;
 
 entity ps2_controller is
-    Port (B1_status : in  STD_LOGIC_VECTOR (7 downto 0); -- button status, signes etc. return by mouse
+ Port (clk : in std_logic;
+		B1_status : in  STD_LOGIC_VECTOR (7 downto 0); -- button status, signes etc. return by mouse
 		B2_X : in  STD_LOGIC_VECTOR (7 downto 0); -- x offset returned by mouse
 		B3_Y : in  STD_LOGIC_VECTOR (7 downto 0); -- y offset returned by mouse
 		dataready : in STD_LOGIC;  -- signal send by mouse when some new data is ready
@@ -31,56 +32,60 @@ begin
 
 	mouse_irq <= mouse_irq_s;
 
-calc_pos:process(mouse_raw_x, mouse_raw_y, B1_status)
+calc_pos:process(clk, mouse_raw_x, mouse_raw_y, B1_status)
 begin
-		
-	if B1_status(4) = '0' then
-	  mouse_x_s <= mouse_x_s + mouse_raw_x;
-	else
-	  mouse_x_s <= (mouse_x_s - mouse_raw_x);
-	end if;
-
-	if B1_status(5) = '0' then
-	  mouse_y_s <= (mouse_y_s + mouse_raw_y);
-	else
-	  mouse_y_s <= (mouse_y_s - mouse_raw_y);
-	end if;
-
-	if mouse_x_s >= max_x_pos then
-		mouse_x_s <= X"12c0";
-	end if;
-
-	if mouse_x_s < 0 then
-		mouse_x_s <= X"0000";
-	end if;
-
-	if mouse_y_s >= max_y_pos then
-		mouse_y_s <= X"07d0";
-	end if;
-
-	if mouse_y_s < 0 then
-		mouse_y_s <= X"0000";
-	end if;
-		
-end process;
-
-assign_pos:process(mouse_x_s, mouse_y_s, logic_irq)
-begin
-	if logic_irq ='0' then
-		if mouse_x_s < 0  then
-			mouse_x <= X"0000";
-		elsif mouse_x_s >= max_x_pos then
-			mouse_x <= X"12c0";
+	if rising_edge(clk)
+	then
+		if B1_status(4) = '0' then
+		  mouse_x_s <= mouse_x_s + mouse_raw_x;
 		else
-			mouse_x <= mouse_x_s;
+		  mouse_x_s <= (mouse_x_s - mouse_raw_x);
+		end if;
+
+		if B1_status(5) = '0' then
+		  mouse_y_s <= (mouse_y_s + mouse_raw_y);
+		else
+		  mouse_y_s <= (mouse_y_s - mouse_raw_y);
+		end if;
+
+		if mouse_x_s >= max_x_pos then
+			mouse_x_s <= X"12c0";
+		end if;
+
+		if mouse_x_s < 0 then
+			mouse_x_s <= X"0000";
+		end if;
+
+		if mouse_y_s >= max_y_pos then
+			mouse_y_s <= X"07d0";
 		end if;
 
 		if mouse_y_s < 0 then
-			mouse_y <= X"0000";
-		elsif mouse_y_s >= max_y_pos then
-			mouse_y <= X"07d0";
-		else
-			mouse_y <= mouse_y_s;
+			mouse_y_s <= X"0000";
+		end if;
+	end if;
+end process;
+
+assign_pos:process(clk, mouse_x_s, mouse_y_s, logic_irq)
+begin
+	if rising_edge(clk)
+	then
+		if logic_irq ='0' then
+			if mouse_x_s < 0  then
+				mouse_x <= X"0000";
+			elsif mouse_x_s >= max_x_pos then
+				mouse_x <= X"12c0";
+			else
+				mouse_x <= mouse_x_s;
+			end if;
+
+			if mouse_y_s < 0 then
+				mouse_y <= X"0000";
+			elsif mouse_y_s >= max_y_pos then
+				mouse_y <= X"07d0";
+			else
+				mouse_y <= mouse_y_s;
+			end if;
 		end if;
 	end if;
 end process;
