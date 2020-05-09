@@ -40,15 +40,14 @@ begin
 	vga_reset <= vga_reset_s;
 	
 	vga_reset_s <= '0' when enable ='1' else '1';
-	
-	load_img: process(ticks, enable, mode, mem_datain)
+	vga_we_s <= not vga_we_s when enable ='1' else '0';
+	load_img: process(clk, ticks, enable, mode, mem_datain)
 	begin
-		
-		if enable = '1'
+		if rising_edge(clk) and enable = '1'
 		then
 			if mode = "00" 
 			then -- start mode, when everything is read as it is
-				if ticks = to_integer(unsigned(mouse_pos)) 
+				if ticks = to_integer(unsigned(mouse_pos))
 				then
 					vga_data <= cursor;
 				else
@@ -83,12 +82,10 @@ begin
 						vga_data <= space;
 					end if;
 			end if;
-		else
-			vga_data <= X"00";
 		end if;
 	end process;
 	
-	load_addr: process(clk, vga_busy, enable)
+	load_addr: process(clk, ticks, vga_busy, enable)
 	begin
 		if rising_edge(clk) and enable = '1' and vga_busy = '0' 
 		then
