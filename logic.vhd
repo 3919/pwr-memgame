@@ -5,6 +5,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity logic is
   port (
     clk            : in  std_logic;
+    i_random       : in  std_logic_vector (7 downto 0);
     ps2_irq_in     : in  std_logic;
     ps2_irq_out    : out std_logic;
     ps2_x          : in  std_logic_vector (15 downto 0);
@@ -14,7 +15,7 @@ entity logic is
     vga_enable     : out std_logic;
     vga_mode       : out std_logic_vector (1 downto 0);
     vga_work       : in  std_logic;
-    vga_mouse_pos  : out std_logic_vector (7 downto 0)
+    vga_mouse_pos  : out std_logic_vector (15 downto 0)
   );
 end logic;
 
@@ -115,6 +116,8 @@ architecture Behavioral of logic is
   constant LAST_OBJECT  : unsigned(sog_object_count'range) := X"0006";
   constant EMPTY_OBJECT : unsigned(mem_datain'range)       := X"20";
 begin
+
+  sog_random <= i_random;
 
   objgen: object_generator port map
   (
