@@ -21,12 +21,10 @@ entity object_generator is
   );
 end object_generator;
 
-larchitecture Behavioral of object_generator is
-  type state_type is (RESET, GENERATING_PREPARE, GENERATING_SHUFFLE, GENERATING_SWAP_RD1, GENERATING_SWAP_RD2, GENERATING_SWAP_WR, READY);
+architecture Behavioral of object_generator is
+  type state_type is (RESET, GENERATING_PREPARE, GENERATING_ZERO_REST, GENERATING_SHUFFLE, GENERATING_SWAP_RD1, GENERATING_SWAP_RD2, GENERATING_SWAP_WR, READY);
   signal state : state_type;
   signal current_address : std_logic_vector(o_mem_address'range);
-  signal swap_buffer_current : std_logic_vector(i_mem_datain'range);
-  signal swap_buffer_random : std_logic_vector(i_mem_datain'range);
   signal random_address : unsigned(o_mem_address'range);
 
   constant MAX_OBJ : integer := 960;
@@ -55,6 +53,17 @@ begin
             current_address <= std_logic_vector(unsigned(current_address) + 1);
             counter := counter + 1;
           else
+            state <= GENERATING_ZERO_REST;
+          end if;
+
+        when GENERATING_ZERO_REST =>
+
+          if current_address /= std_logic_vector(to_unsigned(MAX_OBJ, current_address'length)) then
+            o_mem_we <= '1';
+            o_mem_address <= current_address;
+            o_mem_dataout <= (others => '0');
+            current_address <= std_logic_vector(unsigned(current_address) + 1);
+          else
             o_mem_we <= '0';
             current_address <= std_logic_vector(to_unsigned(1,current_address'length));
             state <= GENERATING_SHUFFLE;
@@ -71,8 +80,6 @@ begin
           end if;
 
         when GENERATING_SWAP_RD1 =>
-          -- Read from current address. Prepared in previous state.
-          swap_buffer_current <= i_mem_datain;
 
           -- Prepare for next cycle (2nd read, random address smaller than current)
           -- Random address is prepared in previous state with iterative method.
@@ -83,19 +90,19 @@ begin
           state <= GENERATING_SWAP_RD2;
 
         when GENERATING_SWAP_RD2 =>
-          swap_buffer_random <= i_mem_datain;
 
           -- Prepare for next cycle (write at random address, cached value from current address)
           o_mem_we <= '1';
-          o_mem_dataout <= swap_buffer_current;
+          o_mem_dataout <= i_mem_datain;
 
           state <= GENERATING_SWAP_WR;
 
         when GENERATING_SWAP_WR =>
+
           -- Prepare for next cycle (write at current address, cached value from random address)
           o_mem_we <= '1';
           o_mem_address <= current_address;
-          o_mem_dataout <= swap_buffer_random;
+          o_mem_dataout <= i_mem_datain;
 
           current_address <= std_logic_vector(unsigned(current_address) + 1);
 
